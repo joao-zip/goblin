@@ -28,3 +28,4 @@ coverage.html
 
 # Temp dirs used during mutation testing
 tmp/
+CONTRIBUTING.md
