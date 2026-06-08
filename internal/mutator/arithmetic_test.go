@@ -53,11 +53,11 @@ func TestArithmeticMutator_Mutate(t *testing.T) {
 		op       token.Token
 		wantOps  []token.Token
 	}{
-		{"add", token.ADD, []token.Token{token.SUB, token.MUL, token.QUO}},
-		{"sub", token.SUB, []token.Token{token.ADD, token.MUL, token.QUO}},
-		{"mul", token.MUL, []token.Token{token.ADD, token.SUB, token.QUO}},
-		{"quo", token.QUO, []token.Token{token.ADD, token.SUB, token.MUL}},
-		{"rem", token.REM, []token.Token{token.ADD, token.SUB, token.MUL}},
+		{"add", token.ADD, []token.Token{token.SUB}},
+		{"sub", token.SUB, []token.Token{token.ADD}},
+		{"mul", token.MUL, []token.Token{token.QUO}},
+		{"quo", token.QUO, []token.Token{token.MUL}},
+		{"rem", token.REM, []token.Token{token.MUL}},
 	}
 
 	for _, tt := range tests {

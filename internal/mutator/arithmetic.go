@@ -6,11 +6,11 @@ import (
 )
 
 var arithmeticReplacements = map[token.Token][]token.Token{
-	token.ADD: {token.SUB, token.MUL, token.QUO},
-	token.SUB: {token.ADD, token.MUL, token.QUO},
-	token.MUL: {token.ADD, token.SUB, token.QUO},
-	token.QUO: {token.ADD, token.SUB, token.MUL},
-	token.REM: {token.ADD, token.SUB, token.MUL},
+	token.ADD: {token.SUB}, // + -> -
+	token.SUB: {token.ADD}, // - -> +
+	token.MUL: {token.QUO}, // * -> /
+	token.QUO: {token.MUL}, // / -> *
+	token.REM: {token.MUL}, // % -> *
 }
 
 // ArithmeticMutator swaps arithmetic operators: +, -, *, /, %.
