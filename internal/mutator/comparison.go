@@ -5,15 +5,16 @@ import (
 	"go/token"
 )
 
-// Mapa de substituições para operadores de comparação (1 para 1)
 var comparisonReplacements = map[token.Token][]token.Token{
 	token.EQL: {token.NEQ}, // == -> !=
 	token.NEQ: {token.EQL}, // != -> ==
 	token.LSS: {token.GEQ}, // < -> >=
+	token.GTR: {token.LEQ}, // > -> <=
+	token.LEQ: {token.GTR}, // <= -> >
 	token.GEQ: {token.LSS}, // >= -> <
 }
 
-// ComparisonMutator troca os operadores de comparação.
+// ComparisonMutator swaps comparison operators.
 type ComparisonMutator struct{}
 
 func (m *ComparisonMutator) Name() string { return "comparison" }
@@ -42,7 +43,7 @@ func (m *ComparisonMutator) Mutate(node ast.Node) []MutatedNode {
 	var mutations []MutatedNode
 
 	for _, rep := range replacements {
-		rep := rep // Capturar a variável para o closure
+		rep := rep
 		mutations = append(mutations, MutatedNode{
 			Original:    original.String(),
 			Replacement: rep.String(),

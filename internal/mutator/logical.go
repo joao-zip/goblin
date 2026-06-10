@@ -5,13 +5,13 @@ import (
 	"go/token"
 )
 
-// Mapa de substituições para operadores lógicos (1 para 1)
+
 var logicalReplacements = map[token.Token][]token.Token{
 	token.LAND: {token.LOR},  // && -> ||
 	token.LOR:  {token.LAND}, // || -> &&
 }
 
-// LogicalMutator troca os operadores lógicos.
+// LogicalMutator swaps logical operators.
 type LogicalMutator struct{}
 
 func (m *LogicalMutator) Name() string { return "logical" }
@@ -40,7 +40,7 @@ func (m *LogicalMutator) Mutate(node ast.Node) []MutatedNode {
 	var mutations []MutatedNode
 
 	for _, rep := range replacements {
-		rep := rep // Capturar a variável para o closure
+		rep := rep
 		mutations = append(mutations, MutatedNode{
 			Original:    original.String(),
 			Replacement: rep.String(),
