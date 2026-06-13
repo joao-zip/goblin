@@ -1,5 +1,5 @@
 # Binaries
-gomutate
+/gomutate
 *.exe
 *.dll
 *.so
