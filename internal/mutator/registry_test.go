@@ -7,7 +7,7 @@ import (
 func TestDefaultMutators(t *testing.T) {
 	mutators := DefaultMutators()
 
-	expected := []string{"arithmetic", "comparison", "logical"}
+	expected := []string{"arithmetic", "comparison", "logical", "unary", "assignment"}
 
 	if len(mutators) != len(expected) {
 		t.Fatalf("DefaultMutators() returned %d mutators, want %d", len(mutators), len(expected))
@@ -22,10 +22,10 @@ func TestDefaultMutators(t *testing.T) {
 
 func TestFilterMutators_All(t *testing.T) {
 	mutators := DefaultMutators()
-	filtered := FilterMutators(mutators, []string{"arithmetic", "comparison", "logical"})
+	filtered := FilterMutators(mutators, []string{"arithmetic", "comparison", "logical", "unary", "assignment"})
 
-	if len(filtered) != 3 {
-		t.Fatalf("FilterMutators() returned %d, want 3", len(filtered))
+	if len(filtered) != 5 {
+		t.Fatalf("FilterMutators() returned %d, want 5", len(filtered))
 	}
 }
 

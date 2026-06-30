@@ -13,6 +13,8 @@ type Config struct {
 	Threshold float64
 	Verbose   bool
 	Mutators  []string
+	Output    string
+	Workers   int
 }
 
 func Default() Config {
@@ -36,6 +38,8 @@ func FromArgs(args []string) (Config, error) {
 	mutatorsFlag := fs.String("mutators", "", "Comma-separated list of mutators to run")
 	thresholdFlag := fs.Float64("threshold", cfg.Threshold, "Minimum mutation score threshold")
 	verboseFlag := fs.Bool("verbose", cfg.Verbose, "Enable verbose logging")
+	outputFlag := fs.String("output", "", "Output file path for JSON report")
+	workersFlag := fs.Int("workers", 0, "Number of parallel workers (default: number of CPUs)")
 
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err
@@ -44,6 +48,8 @@ func FromArgs(args []string) (Config, error) {
 	cfg.Timeout = *timeoutFlag
 	cfg.Threshold = *thresholdFlag
 	cfg.Verbose = *verboseFlag
+	cfg.Output = *outputFlag
+	cfg.Workers = *workersFlag
 
 	if fs.NArg() > 0 {
 		cfg.Dir = fs.Arg(0)

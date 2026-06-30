@@ -23,6 +23,12 @@ func TestDefault(t *testing.T) {
 	if cfg.Mutators != nil {
 		t.Errorf("Mutators = %v, want nil", cfg.Mutators)
 	}
+	if cfg.Output != "" {
+		t.Errorf("Output = %q, want empty", cfg.Output)
+	}
+	if cfg.Workers != 0 {
+		t.Errorf("Workers = %d, want 0", cfg.Workers)
+	}
 }
 
 func TestFromArgs_NoArgs(t *testing.T) {
@@ -118,6 +124,16 @@ func TestFromArgs_EmptyMutators(t *testing.T) {
 	}
 }
 
+func TestFromArgs_OutputFlag(t *testing.T) {
+	cfg, err := FromArgs([]string{"--output", "report.json"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.Output != "report.json" {
+		t.Errorf("Output = %q, want %q", cfg.Output, "report.json")
+	}
+}
+
 func TestFromArgs_SingleMutator(t *testing.T) {
 	cfg, err := FromArgs([]string{"--mutators", "logical"})
 	if err != nil {
@@ -125,5 +141,25 @@ func TestFromArgs_SingleMutator(t *testing.T) {
 	}
 	if len(cfg.Mutators) != 1 || cfg.Mutators[0] != "logical" {
 		t.Errorf("Mutators = %v, want [logical]", cfg.Mutators)
+	}
+}
+
+func TestFromArgs_WorkersFlag(t *testing.T) {
+	cfg, err := FromArgs([]string{"--workers", "4"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.Workers != 4 {
+		t.Errorf("Workers = %d, want 4", cfg.Workers)
+	}
+}
+
+func TestFromArgs_WorkersDefault(t *testing.T) {
+	cfg, err := FromArgs([]string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.Workers != 0 {
+		t.Errorf("Workers = %d, want 0", cfg.Workers)
 	}
 }

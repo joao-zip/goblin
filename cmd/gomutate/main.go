@@ -1,30 +1,30 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/token"
 	"os"
 	"path/filepath"
-	"time"
+	"runtime"
 
-	"github.com/joao-zip/gomutate/internal/config"
 	astutil "github.com/joao-zip/gomutate/internal/ast"
+	"github.com/joao-zip/gomutate/internal/config"
 	"github.com/joao-zip/gomutate/internal/mutator"
+	"github.com/joao-zip/gomutate/internal/report"
 	"github.com/joao-zip/gomutate/internal/runner"
 	"github.com/joao-zip/gomutate/pkg/mutation"
 )
 
-// ANSI color escape codes
 const (
-	colorReset   = "\033[0m"
-	colorBold    = "\033[1m"
-	colorRed     = "\033[31m"
-	colorGreen   = "\033[32m"
-	colorYellow  = "\033[33m"
-	colorMagenta = "\033[35m"
-	colorCyan    = "\033[36m"
+	colorReset = "\033[0m"
+	colorBold  = "\033[1m"
+	colorRed   = "\033[31m"
+	colorGreen = "\033[32m"
+	colorCyan  = "\033[36m"
 )
 
 type candidate struct {
@@ -68,6 +68,62 @@ func main() {
 	muts := mutator.DefaultMutators()
 	muts = mutator.FilterMutators(muts, cfg.Mutators)
 
+	candidates := collectCandidates(files, fset, muts)
+
+	totalMutants := len(candidates)
+	if totalMutants == 0 {
+		fmt.Println("No mutations could be generated.")
+		os.Exit(0)
+	}
+
+	workers := cfg.Workers
+	if workers <= 0 {
+		workers = runtime.NumCPU()
+	}
+
+	fmt.Printf("Found %d mutation candidates in %d source files. (workers: %d)\n\n", totalMutants, len(files), workers)
+
+	jobs, err := buildJobs(candidates, absDir, fset)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%sError preparing mutations: %v%s\n", colorRed, err, colorReset)
+		os.Exit(1)
+	}
+
+	ctx := context.Background()
+	results := runner.RunAll(ctx, jobs, runner.PoolConfig{
+		Workers:    workers,
+		Timeout:    runner.Config{Timeout: cfg.Timeout},
+		ProjectDir: absDir,
+	})
+
+	for _, r := range results {
+		printStatus(r)
+	}
+
+	textReporter := &report.TextReporter{}
+	textReporter.Report(os.Stdout, results)
+
+	if cfg.Output != "" {
+		if err := writeJSONReport(cfg.Output, results); err != nil {
+			fmt.Fprintf(os.Stderr, "%sError writing JSON report: %v%s\n", colorRed, err, colorReset)
+			os.Exit(1)
+		}
+		fmt.Printf("\nJSON report written to: %s\n", cfg.Output)
+	}
+
+	score := report.CalculateScore(results)
+	if cfg.Threshold > 0 {
+		fmt.Printf("Threshold Required: %.2f%%\n", cfg.Threshold)
+		if score < cfg.Threshold {
+			fmt.Printf("\n%sFailure: Mutation score is below the required threshold of %.2f%%%s\n", colorRed, cfg.Threshold, colorReset)
+			os.Exit(1)
+		} else {
+			fmt.Printf("\n%sSuccess: Mutation score meets or exceeds the threshold.%s\n", colorGreen, colorReset)
+		}
+	}
+}
+
+func collectCandidates(files []*ast.File, fset *token.FileSet, muts []mutator.Mutator) []candidate {
 	var candidates []candidate
 	for _, file := range files {
 		nodes := astutil.FindMutableNodes(file, fset)
@@ -91,112 +147,81 @@ func main() {
 			}
 		}
 	}
+	return candidates
+}
 
-	totalMutants := len(candidates)
-	fmt.Printf("Found %d mutation candidates in %d source files.\n\n", totalMutants, len(files))
-
-	if totalMutants == 0 {
-		fmt.Println("No mutations could be generated.")
-		os.Exit(0)
-	}
-
-	var results []runner.Result
-	var killed, survived, timeout, errCount int
-
-	ctx := context.Background()
+func buildJobs(candidates []candidate, absDir string, fset *token.FileSet) ([]runner.Job, error) {
+	jobs := make([]runner.Job, 0, len(candidates))
 
 	for i, c := range candidates {
-		id := i + 1
+		originalData, err := os.ReadFile(c.filePath)
+		if err != nil {
+			return nil, fmt.Errorf("reading %s: %w", c.filePath, err)
+		}
+
+		c.mutatedNode.Apply()
+		var buf bytes.Buffer
+		err = format.Node(&buf, fset, c.file)
+		c.mutatedNode.Rollback()
+
+		if err != nil {
+			return nil, fmt.Errorf("formatting mutated AST for %s: %w", c.filePath, err)
+		}
+
 		relPath, _ := filepath.Rel(absDir, c.filePath)
 		if relPath == "" {
 			relPath = filepath.Base(c.filePath)
 		}
 
-		fmt.Printf(" [%d/%d] Mutating %s:%d:%d (%s) | %s → %s... ",
-			id, totalMutants, relPath, c.line, c.column, c.mutatorName, c.original, c.mutatedNode.Replacement)
-
-		res, runErr := runCandidate(ctx, c, absDir, cfg.Timeout, fset)
-		if runErr != nil {
-			fmt.Printf("%s[ERROR: %v]%s\n", colorRed, runErr, colorReset)
-			errCount++
-			results = append(results, runner.Result{
-				Mutation: mutation.Mutation{
-					ID:     id,
-					Status: mutation.Error,
-				},
-				Status: mutation.Error,
-			})
-			continue
-		}
-
-		res.Mutation.ID = id
-		results = append(results, res)
-
-		switch res.Status {
-		case mutation.Killed:
-			fmt.Printf("%s[KILLED]%s\n", colorGreen, colorReset)
-			killed++
-		case mutation.Survived:
-			fmt.Printf("%s[SURVIVED]%s\n", colorRed, colorReset)
-			survived++
-		case mutation.Timeout:
-			fmt.Printf("%s[TIMEOUT]%s\n", colorYellow, colorReset)
-			timeout++
-		case mutation.Error:
-			fmt.Printf("%s[BUILD ERROR]%s\n", colorMagenta, colorReset)
-			errCount++
-		}
+		jobs = append(jobs, runner.Job{
+			ID:           i + 1,
+			RelPath:      relPath,
+			OriginalData: originalData,
+			MutatedData:  buf.Bytes(),
+			MutatorName:  c.mutatorName,
+			Line:         c.line,
+			Column:       c.column,
+			Original:     c.original,
+			Replacement:  c.mutatedNode.Replacement,
+		})
 	}
 
-	fmt.Printf("\n%s--- Mutation Testing Results ---%s\n", colorBold, colorReset)
-	fmt.Printf("Total Mutants:  %d\n", totalMutants)
-	fmt.Printf("  %s✅ Killed:%s      %d (%.1f%%)\n", colorGreen, colorReset, killed, float64(killed)/float64(totalMutants)*100)
-	fmt.Printf("  %s❌ Survived:%s    %d (%.1f%%)\n", colorRed, colorReset, survived, float64(survived)/float64(totalMutants)*100)
-	fmt.Printf("  %s⏰ Timeout:%s     %d (%.1f%%)\n", colorYellow, colorReset, timeout, float64(timeout)/float64(totalMutants)*100)
-	fmt.Printf("  %s⚠️  Error:%s       %d (%.1f%%)\n", colorMagenta, colorReset, errCount, float64(errCount)/float64(totalMutants)*100)
-
-	score := (float64(killed) / float64(totalMutants)) * 100
-	fmt.Printf("\n%sMutation Score: %.2f%%%s\n", colorBold, score, colorReset)
-
-	if cfg.Threshold > 0 {
-		fmt.Printf("Threshold Required: %.2f%%\n", cfg.Threshold)
-		if score < cfg.Threshold {
-			fmt.Printf("\n%sFailure: Mutation score is below the required threshold of %.2f%%%s\n", colorRed, cfg.Threshold, colorReset)
-			os.Exit(1)
-		} else {
-			fmt.Printf("\n%sSuccess: Mutation score meets or exceeds the threshold.%s\n", colorGreen, colorReset)
-		}
-	}
+	return jobs, nil
 }
 
-func runCandidate(ctx context.Context, c candidate, dir string, timeout time.Duration, fset *token.FileSet) (runner.Result, error) {
-	originalBytes, err := os.ReadFile(c.filePath)
+func printStatus(r runner.Result) {
+	const (
+		green   = "\033[32m"
+		red     = "\033[31m"
+		yellow  = "\033[33m"
+		magenta = "\033[35m"
+		reset   = "\033[0m"
+	)
+
+	var label string
+	switch r.Status {
+	case mutation.Killed:
+		label = green + "[KILLED]" + reset
+	case mutation.Survived:
+		label = red + "[SURVIVED]" + reset
+	case mutation.Timeout:
+		label = yellow + "[TIMEOUT]" + reset
+	case mutation.Error:
+		label = magenta + "[ERROR]" + reset
+	}
+
+	fmt.Printf(" [%d] %s:%d:%d (%s) %s → %s  %s\n",
+		r.Mutation.ID, r.Mutation.File, r.Mutation.Line, r.Mutation.Column,
+		r.Mutation.Type, r.Mutation.Original, r.Mutation.Replacement, label)
+}
+
+func writeJSONReport(path string, results []runner.Result) error {
+	f, err := os.Create(path)
 	if err != nil {
-		return runner.Result{}, fmt.Errorf("reading source file: %w", err)
+		return fmt.Errorf("creating report file: %w", err)
 	}
+	defer f.Close()
 
-	defer func() {
-		// Restore the original file on disk to guarantee cleanliness
-		_ = os.WriteFile(c.filePath, originalBytes, 0644)
-	}()
-
-	// Apply mutation to AST, formatting and writing it to the actual file path on disk
-	err = astutil.ApplyAndWrite(fset, c.file, c.mutatedNode, c.filePath)
-	if err != nil {
-		return runner.Result{}, fmt.Errorf("applying mutation: %w", err)
-	}
-
-	res := runner.RunTests(ctx, dir, runner.Config{Timeout: timeout})
-
-	res.Mutation = mutation.Mutation{
-		Type:        mutation.MutationType(c.mutatorName),
-		File:        c.filePath,
-		Line:        c.line,
-		Column:      c.column,
-		Original:    c.original,
-		Replacement: c.mutatedNode.Replacement,
-		Status:      res.Status,
-	}
-
-	return res, nil
+	jsonReporter := &report.JSONReporter{}
+	return jsonReporter.Report(f, results)
 }
