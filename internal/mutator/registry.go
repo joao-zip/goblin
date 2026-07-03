@@ -6,6 +6,8 @@ func DefaultMutators() []Mutator {
 		&ArithmeticMutator{},
 		&ComparisonMutator{},
 		&LogicalMutator{},
+		&UnaryMutator{},
+		&AssignmentMutator{},
 	}
 }
 
