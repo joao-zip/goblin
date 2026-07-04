@@ -51,7 +51,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	fmt.Printf("%s%s🧟 Goblin v%s — Mutation Testing for Go%s\n\n", colorBold, colorCyan, version.Version, colorReset)
+	fmt.Printf("%s%sGoblin v%s — Mutation Testing for Go%s\n\n", colorBold, colorCyan, version.Version, colorReset)
 
 	absDir, err := filepath.Abs(cfg.Dir)
 	if err != nil {

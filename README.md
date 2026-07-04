@@ -2,7 +2,7 @@
   <img src="goblin_logo.png" alt="Goblin Logo" width="200">
 </p>
 
-# 🧟 Goblin
+# Goblin
 
 **Mutation Testing for Go**
 
