@@ -11,12 +11,13 @@ import (
 	"path/filepath"
 	"runtime"
 
-	astutil "github.com/joao-zip/gomutate/internal/ast"
-	"github.com/joao-zip/gomutate/internal/config"
-	"github.com/joao-zip/gomutate/internal/mutator"
-	"github.com/joao-zip/gomutate/internal/report"
-	"github.com/joao-zip/gomutate/internal/runner"
-	"github.com/joao-zip/gomutate/pkg/mutation"
+	astutil "github.com/joao-zip/goblin/internal/ast"
+	"github.com/joao-zip/goblin/internal/config"
+	"github.com/joao-zip/goblin/internal/mutator"
+	"github.com/joao-zip/goblin/internal/report"
+	"github.com/joao-zip/goblin/internal/runner"
+	"github.com/joao-zip/goblin/internal/version"
+	"github.com/joao-zip/goblin/pkg/mutation"
 )
 
 const (
@@ -39,13 +40,18 @@ type candidate struct {
 }
 
 func main() {
-	fmt.Printf("%s%s🧬 GoMutate v0.1.0 — Mutation Testing for Go%s\n\n", colorBold, colorCyan, colorReset)
-
 	cfg, err := config.FromArgs(os.Args[1:])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%sError parsing CLI arguments: %v%s\n", colorRed, err, colorReset)
 		os.Exit(1)
 	}
+
+	if cfg.ShowVersion {
+		fmt.Print(version.Banner())
+		os.Exit(0)
+	}
+
+	fmt.Printf("%s%s🧟 Goblin v%s — Mutation Testing for Go%s\n\n", colorBold, colorCyan, version.Version, colorReset)
 
 	absDir, err := filepath.Abs(cfg.Dir)
 	if err != nil {

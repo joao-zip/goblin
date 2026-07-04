@@ -8,13 +8,14 @@ import (
 )
 
 type Config struct {
-	Dir       string
-	Timeout   time.Duration
-	Threshold float64
-	Verbose   bool
-	Mutators  []string
-	Output    string
-	Workers   int
+	Dir         string
+	Timeout     time.Duration
+	Threshold   float64
+	Verbose     bool
+	Mutators    []string
+	Output      string
+	Workers     int
+	ShowVersion bool
 }
 
 func Default() Config {
@@ -30,7 +31,7 @@ func Default() Config {
 func FromArgs(args []string) (Config, error) {
 	cfg := Default()
 
-	fs := flag.NewFlagSet("gomutate", flag.ContinueOnError)
+	fs := flag.NewFlagSet("goblin", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 
 	dirFlag := fs.String("dir", cfg.Dir, "Directory of the project to test")
@@ -40,9 +41,15 @@ func FromArgs(args []string) (Config, error) {
 	verboseFlag := fs.Bool("verbose", cfg.Verbose, "Enable verbose logging")
 	outputFlag := fs.String("output", "", "Output file path for JSON report")
 	workersFlag := fs.Int("workers", 0, "Number of parallel workers (default: number of CPUs)")
+	versionFlag := fs.Bool("version", false, "Print version information and exit")
 
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err
+	}
+
+	if *versionFlag {
+		cfg.ShowVersion = true
+		return cfg, nil
 	}
 
 	cfg.Timeout = *timeoutFlag

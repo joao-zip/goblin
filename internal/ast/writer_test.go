@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/joao-zip/gomutate/internal/mutator"
+	"github.com/joao-zip/goblin/internal/mutator"
 )
 
 func TestWriteFile(t *testing.T) {

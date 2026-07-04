@@ -4,7 +4,7 @@ import (
 	"go/ast"
 	"go/token"
 
-	"github.com/joao-zip/gomutate/pkg/mutation"
+	"github.com/joao-zip/goblin/pkg/mutation"
 )
 
 // MutableNode represents an AST node that can be mutated.

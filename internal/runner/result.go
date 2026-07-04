@@ -3,7 +3,7 @@ package runner
 import (
 	"time"
 
-	"github.com/joao-zip/gomutate/pkg/mutation"
+	"github.com/joao-zip/goblin/pkg/mutation"
 )
 
 // Result holds the outcome of running tests against a single mutant.

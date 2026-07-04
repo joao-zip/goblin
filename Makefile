@@ -11,7 +11,7 @@ cover:
 
 # Build the CLI binary
 build:
-	go build -o gomutate ./cmd/gomutate
+	go build -o goblin ./cmd/goblin
 
 # Lint (requires golangci-lint)
 lint:
@@ -19,4 +19,5 @@ lint:
 
 # Clean build artifacts
 clean:
-	rm -f gomutate coverage.out coverage.html
+	rm -f goblin coverage.out coverage.html
+

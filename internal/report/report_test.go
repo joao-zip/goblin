@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joao-zip/gomutate/internal/runner"
-	"github.com/joao-zip/gomutate/pkg/mutation"
+	"github.com/joao-zip/goblin/internal/runner"
+	"github.com/joao-zip/goblin/pkg/mutation"
 )
 
 func sampleResults() []runner.Result {

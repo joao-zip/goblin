@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joao-zip/gomutate/pkg/mutation"
+	"github.com/joao-zip/goblin/pkg/mutation"
 )
 
 func TestRunAll_EmptyJobs(t *testing.T) {

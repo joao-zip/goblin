@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joao-zip/gomutate/pkg/mutation"
+	"github.com/joao-zip/goblin/pkg/mutation"
 )
 
 // Config holds runner configuration.

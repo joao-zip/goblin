@@ -10,7 +10,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/joao-zip/gomutate/pkg/mutation"
+	"github.com/joao-zip/goblin/pkg/mutation"
 )
 
 type Job struct {
@@ -145,7 +145,7 @@ func buildMutation(j Job, status mutation.MutationStatus) mutation.Mutation {
 }
 
 func copyDir(src string) (string, error) {
-	tmpDir, err := os.MkdirTemp("", "gomutate-worker-*")
+	tmpDir, err := os.MkdirTemp("", "goblin-worker-*")
 	if err != nil {
 		return "", fmt.Errorf("creating temp dir: %w", err)
 	}

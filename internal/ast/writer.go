@@ -7,7 +7,7 @@ import (
 	"go/token"
 	"os"
 
-	"github.com/joao-zip/gomutate/internal/mutator"
+	"github.com/joao-zip/goblin/internal/mutator"
 )
 
 // WriteFile writes an AST back to a Go source file, formatted with gofmt.

@@ -3,7 +3,7 @@ package ast
 import (
 	"testing"
 
-	"github.com/joao-zip/gomutate/pkg/mutation"
+	"github.com/joao-zip/goblin/pkg/mutation"
 )
 
 func TestFindMutableNodes_Arithmetic(t *testing.T) {

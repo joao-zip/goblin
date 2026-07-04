@@ -10,14 +10,14 @@ import (
 )
 
 func TestE2E_Calculator(t *testing.T) {
-	// 1. Build the gomutate binary
+	// 1. Build the goblin binary
 	tmpDir := t.TempDir()
-	binaryPath := filepath.Join(tmpDir, "gomutate")
+	binaryPath := filepath.Join(tmpDir, "goblin")
 
-	cmdBuild := exec.Command("go", "build", "-o", binaryPath, "./cmd/gomutate")
+	cmdBuild := exec.Command("go", "build", "-o", binaryPath, "./cmd/goblin")
 	cmdBuild.Env = append(os.Environ(), "GOTOOLCHAIN=auto")
 	if out, err := cmdBuild.CombinedOutput(); err != nil {
-		t.Fatalf("failed to build gomutate binary: %v\nOutput: %s", err, string(out))
+		t.Fatalf("failed to build goblin binary: %v\nOutput: %s", err, string(out))
 	}
 
 	// 2. Run integration test without threshold, with output json
@@ -31,7 +31,7 @@ func TestE2E_Calculator(t *testing.T) {
 
 	err := cmdRun.Run()
 	if err != nil {
-		t.Fatalf("gomutate failed: %v\nStdout: %s\nStderr: %s", err, stdout.String(), stderr.String())
+		t.Fatalf("goblin failed: %v\nStdout: %s\nStderr: %s", err, stdout.String(), stderr.String())
 	}
 
 	// Verify stdout contains expected content
@@ -99,4 +99,15 @@ func TestE2E_Calculator(t *testing.T) {
 	if !bytes.Contains(stdoutT.Bytes(), []byte("Failure: Mutation score is below the required threshold")) {
 		t.Errorf("expected threshold failure message in stdout, got: %s", stdoutT.String())
 	}
+
+	// 4. Test --version flag
+	cmdVersion := exec.Command(binaryPath, "--version")
+	versionOut, err := cmdVersion.CombinedOutput()
+	if err != nil {
+		t.Fatalf("goblin --version failed: %v\nOutput: %s", err, string(versionOut))
+	}
+	if !bytes.Contains(versionOut, []byte("Goblin v")) {
+		t.Errorf("expected version banner, got: %s", string(versionOut))
+	}
 }
+
