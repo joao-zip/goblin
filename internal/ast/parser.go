@@ -13,7 +13,7 @@ import (
 // ParseSource parses Go source code from a string.
 func ParseSource(src string) (*ast.File, *token.FileSet, error) {
 	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, "source.go", src, parser.AllErrors)
+	file, err := parser.ParseFile(fset, "source.go", src, parser.AllErrors|parser.ParseComments)
 	if err != nil {
 		return nil, nil, fmt.Errorf("parsing source: %w", err)
 	}
@@ -23,7 +23,7 @@ func ParseSource(src string) (*ast.File, *token.FileSet, error) {
 // ParseFile parses a single Go source file from disk.
 func ParseFile(path string) (*ast.File, *token.FileSet, error) {
 	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, path, nil, parser.AllErrors)
+	file, err := parser.ParseFile(fset, path, nil, parser.AllErrors|parser.ParseComments)
 	if err != nil {
 		return nil, nil, fmt.Errorf("parsing file %s: %w", path, err)
 	}
@@ -38,7 +38,7 @@ func ParseDir(dir string) ([]*ast.File, *token.FileSet, error) {
 		return !strings.HasSuffix(info.Name(), "_test.go")
 	}
 
-	pkgs, err := parser.ParseDir(fset, dir, filter, parser.AllErrors)
+	pkgs, err := parser.ParseDir(fset, dir, filter, parser.AllErrors|parser.ParseComments)
 	if err != nil {
 		return nil, nil, fmt.Errorf("parsing directory %s: %w", dir, err)
 	}

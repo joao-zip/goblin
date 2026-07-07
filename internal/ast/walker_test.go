@@ -225,3 +225,63 @@ func filterByType(nodes []MutableNode, mt mutation.MutationType) []MutableNode {
 	}
 	return result
 }
+
+func TestFindMutableNodes_IgnoreInlineComment(t *testing.T) {
+	src := `package example
+
+func calc(a, b int) int {
+	return a + b // goblin:ignore
+}
+`
+	file, fset, err := ParseSource(src)
+	if err != nil {
+		t.Fatalf("ParseSource() error = %v", err)
+	}
+
+	nodes := FindMutableNodes(file, fset)
+	if len(nodes) != 0 {
+		t.Errorf("expected 0 nodes (line ignored), got %d", len(nodes))
+	}
+}
+
+func TestFindMutableNodes_IgnoreStandaloneComment(t *testing.T) {
+	src := `package example
+
+func calc(a, b int) int {
+	// goblin:ignore
+	return a + b
+}
+`
+	file, fset, err := ParseSource(src)
+	if err != nil {
+		t.Fatalf("ParseSource() error = %v", err)
+	}
+
+	nodes := FindMutableNodes(file, fset)
+	if len(nodes) != 0 {
+		t.Errorf("expected 0 nodes (next line ignored), got %d", len(nodes))
+	}
+}
+
+func TestFindMutableNodes_IgnoreOnlyTaggedLines(t *testing.T) {
+	src := `package example
+
+func calc(a, b, c int) int {
+	x := a + b // goblin:ignore
+	return x - c
+}
+`
+	file, fset, err := ParseSource(src)
+	if err != nil {
+		t.Fatalf("ParseSource() error = %v", err)
+	}
+
+	nodes := FindMutableNodes(file, fset)
+	// Only the subtraction on the return line should survive
+	if len(nodes) != 1 {
+		t.Errorf("expected 1 node (subtraction), got %d", len(nodes))
+	}
+	if len(nodes) == 1 && nodes[0].Original != "-" {
+		t.Errorf("expected '-' operator, got %q", nodes[0].Original)
+	}
+}
