@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -42,6 +43,9 @@ type candidate struct {
 func main() {
 	cfg, err := config.FromArgs(os.Args[1:])
 	if err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(0)
+		}
 		fmt.Fprintf(os.Stderr, "%sError parsing CLI arguments: %v%s\n", colorRed, err, colorReset)
 		os.Exit(1)
 	}

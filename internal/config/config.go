@@ -2,9 +2,12 @@ package config
 
 import (
 	"flag"
-	"io"
+	"fmt"
+	"os"
 	"strings"
 	"time"
+
+	"github.com/joao-zip/goblin/internal/version"
 )
 
 type Config struct {
@@ -33,7 +36,13 @@ func FromArgs(args []string) (Config, error) {
 	cfg := Default()
 
 	fs := flag.NewFlagSet("goblin", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "%s", version.Banner())
+		fmt.Fprintf(os.Stderr, "Usage:\n")
+		fmt.Fprintf(os.Stderr, "  goblin [flags] [directory]\n\n")
+		fmt.Fprintf(os.Stderr, "Flags:\n")
+		fs.PrintDefaults()
+	}
 
 	dirFlag := fs.String("dir", cfg.Dir, "Directory of the project to test")
 	timeoutFlag := fs.Duration("timeout", cfg.Timeout, "Timeout for test execution")
