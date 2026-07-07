@@ -12,6 +12,7 @@ package goblin
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"go/ast"
 	"go/format"
 	"go/token"
@@ -50,6 +51,10 @@ type Options struct {
 	// If the score is below this value, Run returns an error.
 	// Set to 0 to disable threshold checking.
 	Threshold float64
+
+	// HTML is the output file path for the interactive HTML report.
+	// If empty, no HTML report is written.
+	HTML string
 }
 
 // Result contains the complete results of a mutation testing run.
@@ -225,6 +230,17 @@ func Run(opts Options) (*Result, error) {
 		Survived: survived,
 		Timeout:  timeout,
 		Errors:   errors,
+	}
+
+	if opts.HTML != "" {
+		f, err := os.Create(opts.HTML)
+		if err != nil {
+			return result, fmt.Errorf("creating HTML report: %w", err)
+		}
+		defer f.Close()
+		if err := (&report.HTMLReporter{}).Report(f, runnerResults); err != nil {
+			return result, fmt.Errorf("writing HTML report: %w", err)
+		}
 	}
 
 	if opts.Threshold > 0 && score < opts.Threshold {

@@ -14,6 +14,7 @@ type Config struct {
 	Verbose     bool
 	Mutators    []string
 	Output      string
+	HTML        string
 	Workers     int
 	ShowVersion bool
 }
@@ -42,6 +43,7 @@ func FromArgs(args []string) (Config, error) {
 	outputFlag := fs.String("output", "", "Output file path for JSON report")
 	workersFlag := fs.Int("workers", 0, "Number of parallel workers (default: number of CPUs)")
 	versionFlag := fs.Bool("version", false, "Print version information and exit")
+	htmlFlag := fs.String("html", "", "Output file path for HTML report")
 
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err
@@ -56,6 +58,7 @@ func FromArgs(args []string) (Config, error) {
 	cfg.Threshold = *thresholdFlag
 	cfg.Verbose = *verboseFlag
 	cfg.Output = *outputFlag
+	cfg.HTML = *htmlFlag
 	cfg.Workers = *workersFlag
 
 	if fs.NArg() > 0 {

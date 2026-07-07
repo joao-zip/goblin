@@ -37,6 +37,9 @@ goblin --dir ./my-project --threshold 80
 # Export results as JSON
 goblin --dir ./my-project --output report.json
 
+# Generate an interactive HTML report
+goblin --dir ./my-project --html report.html
+
 # Show version
 goblin --version
 ```
@@ -50,6 +53,7 @@ goblin --version
 | `--mutators`  | (all)         | Comma-separated list of mutators to run          |
 | `--threshold` | `0`           | Minimum mutation score (%), exits 1 if below     |
 | `--output`    |               | Output file path for JSON report                 |
+| `--html`      |               | Output file path for interactive HTML report     |
 | `--workers`   | `NumCPU()`    | Number of parallel workers                       |
 | `--verbose`   | `false`       | Enable verbose logging                           |
 | `--version`   |               | Print version information and exit               |
@@ -109,6 +113,21 @@ func main() {
 | `logical`      | `&&` ↔ `\|\|`                                       |
 | `unary`        | `++` ↔ `--`                                         |
 | `assignment`   | `+=` ↔ `-=`, `*=` ↔ `/=`                           |
+
+## Ignoring Code
+
+Use `// goblin:ignore` to prevent mutation of specific lines.
+
+**Inline** — ignores the expression on the same line:
+```go
+result := a + b // goblin:ignore
+```
+
+**Standalone** — ignores the line immediately below:
+```go
+// goblin:ignore
+result := a + b
+```
 
 ## CI Integration
 

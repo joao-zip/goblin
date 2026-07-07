@@ -117,6 +117,14 @@ func main() {
 		fmt.Printf("\nJSON report written to: %s\n", cfg.Output)
 	}
 
+	if cfg.HTML != "" {
+		if err := writeHTMLReport(cfg.HTML, results); err != nil {
+			fmt.Fprintf(os.Stderr, "%sError writing HTML report: %v%s\n", colorRed, err, colorReset)
+			os.Exit(1)
+		}
+		fmt.Printf("HTML report written to: %s\n", cfg.HTML)
+	}
+
 	score := report.CalculateScore(results)
 	if cfg.Threshold > 0 {
 		fmt.Printf("Threshold Required: %.2f%%\n", cfg.Threshold)
@@ -230,4 +238,15 @@ func writeJSONReport(path string, results []runner.Result) error {
 
 	jsonReporter := &report.JSONReporter{}
 	return jsonReporter.Report(f, results)
+}
+
+func writeHTMLReport(path string, results []runner.Result) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("creating HTML report file: %w", err)
+	}
+	defer f.Close()
+
+	htmlReporter := &report.HTMLReporter{}
+	return htmlReporter.Report(f, results)
 }
